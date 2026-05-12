@@ -1,5 +1,5 @@
 // Cloudflare Worker - Sunshine Cleaning Dashboard
-const GOOGLE_SHEETS_API_KEY = 'AIzaSyCMGcVvYLdE_eozD3_EOWiQOsNqLwH0--w'; // ← Replace this!
+const GOOGLE_SHEETS_API_KEY = 'AIzaSyCNFL9xcZ8kcAHzXT7iPAYRaDncodg4DSo'; // ← Replace this!
 const SHEET_ID = '1xXs08NoyMEBeUCRO_1vvxZi6hkQ3kYVt95d47yguykw';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 
