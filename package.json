@@ -1,0 +1,12 @@
+{
+  "name": "sunshine-cleaning-cloudflare",
+  "version": "1.0.0",
+  "description": "Sunshine Cleaning Dashboard on Cloudflare Pages",
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public"
+  },
+  "keywords": ["cloudflare", "pages", "dashboard"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunshine Cleaning Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    
+    #root {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+    
+    .refresh-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+    
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .refresh-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    
+    .section {
+      background: #f8f9ff;
+      padding: 1.5rem;
+      border-radius: 16px;
+    }
+    
+    .section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    
+    .client-list, .appointment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .client-item, .appointment-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .client-name, .appointment-date {
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .client-revenue {
+      color: #667eea;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      font-size: 1.25rem;
+      color: #667eea;
+    }
+    
+    .error {
+      text-align: center;
+      padding: 2rem;
+      background: #fee;
+      border-radius: 12px;
+      color: #c33;
+    }
+    
+    @media (max-width: 768px) {
+      .sections-grid {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    
+    function Dashboard() {
+      const [data, setData] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [refreshing, setRefreshing] = useState(false);
+      
+      const fetchData = async () => {
+        try {
+          setRefreshing(true);
+          const response = await fetch('/api/data');
+          if (!response.ok) throw new Error('Failed to fetch data');
+          const result = await response.json();
+          setData(result);
+          setError(null);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      };
+      
+      useEffect(() => {
+        fetchData();
+      }, []);
+      
+      if (loading) {
+        return <div className="loading">Loading dashboard data...</div>;
+      }
+      
+      if (error && !data) {
+        return (
+          <div className="container">
+            <div className="error">
+              <h2>Error Loading Data</h2>
+              <p>{error}</p>
+              <button onClick={fetchData} className="refresh-btn" style={{marginTop: '1rem'}}>
+                Retry
+              </button>
+            </div>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="container">
+          <div className="header">
+            <div>
+              <h1>☀️ Sunshine Cleaning</h1>
+              <p style={{color: '#666', marginTop: '0.5rem'}}>
+                {data?.cached ? `Cached ${data.cacheAge}` : 'Live data'}
+              </p>
+            </div>
+            <button 
+              onClick={fetchData} 
+              disabled={refreshing}
+              className="refresh-btn"
+            >
+              {refreshing ? '↻ Refreshing...' : '↻ Refresh Data'}
+            </button>
+          </div>
+          
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-label">Total Revenue</div>
+              <div className="stat-value">${data?.totalRevenue?.toLocaleString() || '0'}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Total Cleanings</div>
+              <div className="stat-value">{data?.totalCleanings || 0}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Net Profit</div>
+              <div className="stat-value">${data?.netProfit?.toLocaleString() || '0'}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">May 2026 Revenue</div>
+              <div className="stat-value">${data?.currentMonthRevenue?.toLocaleString() || '0'}</div>
+            </div>
+          </div>
+          
+          <div className="sections-grid">
+            <div className="section">
+              <h2>🌟 Top 5 Clients</h2>
+              <div className="client-list">
+                {data?.topClients?.map((client, i) => (
+                  <div key={i} className="client-item">
+                    <span className="client-name">{client.name}</span>
+                    <span className="client-revenue">${client.revenue.toLocaleString()}</span>
+                  </div>
+                )) || <p>No data</p>}
+              </div>
+            </div>
+            
+            <div className="section">
+              <h2>📅 Recent Appointments</h2>
+              <div className="appointment-list">
+                {data?.recentAppointments?.map((apt, i) => (
+                  <div key={i} className="appointment-item">
+                    <div>
+                      <div className="appointment-date">{apt.date}</div>
+                      <div style={{color: '#666', fontSize: '0.875rem'}}>{apt.client}</div>
+                    </div>
+                    <span className="client-revenue">${apt.fee}</span>
+                  </div>
+                )) || <p>No data</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    ReactDOM.render(<Dashboard />, document.getElementById('root'));
+  </script>
+</body>
+</html>
