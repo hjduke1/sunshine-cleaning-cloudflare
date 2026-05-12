@@ -1,297 +1,399 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sunshine Cleaning Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sunshine Cleaning</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sun: #f5a623;
+      --sun-light: #ffd980;
+      --sky: #e8f4fd;
+      --leaf: #2d6a4f;
+      --leaf-light: #52b788;
+      --dark: #1a1a2e;
+      --mid: #4a4a6a;
+      --muted: #9090b0;
+      --card: #ffffff;
+      --bg: #f4f6fb;
+      --border: #e2e5f0;
+      --shadow: 0 2px 16px rgba(26,26,46,0.08);
+      --shadow-lg: 0 8px 40px rgba(26,26,46,0.14);
     }
-    
+
     body {
-      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--dark);
       min-height: 100vh;
-      padding: 2rem;
     }
-    
-    #root {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    
-    .container {
-      background: white;
-      border-radius: 24px;
-      padding: 2.5rem;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-    }
-    
-    .header {
+
+    /* Header */
+    header {
+      background: var(--dark);
+      padding: 20px 40px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px solid #f0f0f0;
+      justify-content: space-between;
     }
-    
-    h1 {
-      font-size: 2.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: 700;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    
-    .refresh-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--sun);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo h1 {
+      font-family: 'DM Serif Display', serif;
       color: white;
+      font-size: 22px;
+      font-weight: 400;
+    }
+
+    .logo span {
+      color: var(--sun-light);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .last-updated {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .btn-refresh {
+      background: var(--sun);
+      color: var(--dark);
       border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: inherit;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
       font-weight: 600;
-      font-size: 1rem;
-      transition: transform 0.2s;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    
-    .refresh-btn:hover {
-      transform: translateY(-2px);
+    .btn-refresh:hover { background: var(--sun-light); }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Main layout */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px;
     }
-    
-    .refresh-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
+
+    /* Stat cards */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
     }
-    
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
     }
-    
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .stat-card.revenue::before { background: linear-gradient(90deg, #2d6a4f, #52b788); }
+    .stat-card.cleanings::before { background: linear-gradient(90deg, #f5a623, #ffd980); }
+    .stat-card.profit::before { background: linear-gradient(90deg, #1a1a2e, #4a4a6a); }
+    .stat-card.month::before { background: linear-gradient(90deg, #0077b6, #48cae4); }
+
     .stat-label {
-      font-size: 0.875rem;
-      opacity: 0.9;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
     }
-    
+
     .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px;
+      color: var(--dark);
+      line-height: 1;
     }
-    
-    .sections-grid {
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #e8e8ee 25%, #f4f4f8 50%, #e8e8ee 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Bottom grid */
+    .bottom-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      gap: 20px;
     }
-    
-    .section {
-      background: #f8f9ff;
-      padding: 1.5rem;
-      border-radius: 16px;
+
+    @media (max-width: 700px) {
+      .bottom-grid { grid-template-columns: 1fr; }
     }
-    
-    .section h2 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      color: #333;
+
+    .panel {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
     }
-    
-    .client-list, .appointment-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    
-    .client-item, .appointment-item {
-      background: white;
-      padding: 1rem;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    
-    .client-name, .appointment-date {
+
+    .panel-title {
+      font-size: 14px;
       font-weight: 600;
-      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    
-    .client-revenue {
-      color: #667eea;
+
+    /* Client rows */
+    .client-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .client-row:last-child { border-bottom: none; }
+
+    .client-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
       font-weight: 700;
-      font-size: 1.1rem;
+      color: var(--mid);
+      flex-shrink: 0;
+      margin-right: 12px;
     }
-    
-    .loading {
+
+    .client-rank.gold { background: #fff4cc; color: #b8860b; }
+    .client-rank.silver { background: #f0f0f0; color: #666; }
+    .client-rank.bronze { background: #fff0e8; color: #cd7f32; }
+
+    .client-name {
+      flex: 1;
+      font-weight: 500;
+      font-size: 15px;
+    }
+
+    .client-revenue {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--leaf);
+    }
+
+    /* Appointment rows */
+    .appt-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .appt-row:last-child { border-bottom: none; }
+
+    .appt-left { flex: 1; }
+
+    .appt-client {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .appt-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .appt-fee {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--leaf);
+    }
+
+    /* Error state */
+    .error-box {
+      background: #fff5f5;
+      border: 1px solid #ffd0d0;
+      border-radius: 10px;
+      padding: 20px;
+      color: #c0392b;
+      font-size: 14px;
       text-align: center;
-      padding: 4rem;
-      font-size: 1.25rem;
-      color: #667eea;
-    }
-    
-    .error {
-      text-align: center;
-      padding: 2rem;
-      background: #fee;
-      border-radius: 12px;
-      color: #c33;
-    }
-    
-    @media (max-width: 768px) {
-      .sections-grid {
-        grid-template-columns: 1fr;
-      }
-      h1 {
-        font-size: 1.75rem;
-      }
     }
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-    
-    function Dashboard() {
-      const [data, setData] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-      const [refreshing, setRefreshing] = useState(false);
-      
-      const fetchData = async () => {
-        try {
-          setRefreshing(true);
-          const response = await fetch('/api/data');
-          if (!response.ok) throw new Error('Failed to fetch data');
-          const result = await response.json();
-          setData(result);
-          setError(null);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-          setRefreshing(false);
-        }
-      };
-      
-      useEffect(() => {
-        fetchData();
-      }, []);
-      
-      if (loading) {
-        return <div className="loading">Loading dashboard data...</div>;
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">☀️</div>
+      <h1>Sunshine <span>Cleaning</span></h1>
+    </div>
+    <div class="header-right">
+      <span class="last-updated" id="lastUpdated">Loading...</span>
+      <button class="btn-refresh" id="refreshBtn" onclick="loadData()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-grid">
+      <div class="stat-card revenue">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value" id="totalRevenue"><div class="skeleton" style="height:36px;width:120px"></div></div>
+        <div class="stat-sub" id="revSub">&nbsp;</div>
+      </div>
+      <div class="stat-card cleanings">
+        <div class="stat-label">Total Cleanings</div>
+        <div class="stat-value" id="totalCleanings"><div class="skeleton" style="height:36px;width:80px"></div></div>
+        <div class="stat-sub" id="cleanSub">&nbsp;</div>
+      </div>
+      <div class="stat-card profit">
+        <div class="stat-label">Net Profit</div>
+        <div class="stat-value" id="netProfit"><div class="skeleton" style="height:36px;width:120px"></div></div>
+        <div class="stat-sub" id="profitSub">&nbsp;</div>
+      </div>
+      <div class="stat-card month">
+        <div class="stat-label">May 2026 Revenue</div>
+        <div class="stat-value" id="mayRevenue"><div class="skeleton" style="height:36px;width:100px"></div></div>
+        <div class="stat-sub" id="maySub">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="panel">
+        <div class="panel-title">🏆 Top 5 Clients</div>
+        <div id="clientList"><div class="skeleton" style="height:200px"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">📅 Recent Appointments</div>
+        <div id="apptList"><div class="skeleton" style="height:200px"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const fmt = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    async function loadData() {
+      const btn = document.getElementById('refreshBtn');
+      btn.disabled = true;
+      btn.textContent = '↻ Loading...';
+
+      try {
+        const res = await fetch('/api/data?t=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const d = await res.json();
+
+        if (d.error) throw new Error(d.error);
+
+        // Stat cards
+        document.getElementById('totalRevenue').textContent = fmt(d.totalRevenue);
+        document.getElementById('totalCleanings').textContent = Number(d.totalCleanings).toLocaleString();
+        document.getElementById('netProfit').textContent = fmt(d.netProfit);
+        document.getElementById('mayRevenue').textContent = fmt(d.currentMonthRevenue);
+
+        document.getElementById('revSub').textContent = 'Jan – May 2026';
+        document.getElementById('cleanSub').textContent = 'All months';
+        document.getElementById('profitSub').textContent = 'After expenses';
+        document.getElementById('maySub').textContent = 'Apr: ' + fmt(d.previousMonthRevenue);
+
+        // Top clients
+        const rankClass = ['gold', 'silver', 'bronze', '', ''];
+        const clientHTML = (d.topClients || []).map((c, i) => `
+          <div class="client-row">
+            <div class="client-rank ${rankClass[i]}">${i + 1}</div>
+            <div class="client-name">${c.name}</div>
+            <div class="client-revenue">${fmt(c.revenue)}</div>
+          </div>
+        `).join('');
+        document.getElementById('clientList').innerHTML = clientHTML || '<p style="color:#aaa;font-size:14px">No data</p>';
+
+        // Recent appointments
+        const apptHTML = (d.recentAppointments || []).map(a => `
+          <div class="appt-row">
+            <div class="appt-left">
+              <div class="appt-client">${a.client}</div>
+              <div class="appt-meta">${a.date}${a.unit ? ' · Unit ' + a.unit : ''}</div>
+            </div>
+            <div class="appt-fee">${fmt(a.fee)}</div>
+          </div>
+        `).join('');
+        document.getElementById('apptList').innerHTML = apptHTML || '<p style="color:#aaa;font-size:14px">No data</p>';
+
+        // Timestamp
+        const ts = new Date(d.fetchedAt);
+        document.getElementById('lastUpdated').textContent = 'Updated ' + ts.toLocaleTimeString();
+
+      } catch (err) {
+        document.querySelector('main').innerHTML = `
+          <div class="error-box">
+            <strong>Could not load data</strong><br>${err.message}
+          </div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '↻ Refresh';
       }
-      
-      if (error && !data) {
-        return (
-          <div className="container">
-            <div className="error">
-              <h2>Error Loading Data</h2>
-              <p>{error}</p>
-              <button onClick={fetchData} className="refresh-btn" style={{marginTop: '1rem'}}>
-                Retry
-              </button>
-            </div>
-          </div>
-        );
-      }
-      
-      return (
-        <div className="container">
-          <div className="header">
-            <div>
-              <h1>☀️ Sunshine Cleaning</h1>
-              <p style={{color: '#666', marginTop: '0.5rem'}}>
-                {data?.cached ? `Cached ${data.cacheAge}` : 'Live data'}
-              </p>
-            </div>
-            <button 
-              onClick={fetchData} 
-              disabled={refreshing}
-              className="refresh-btn"
-            >
-              {refreshing ? '↻ Refreshing...' : '↻ Refresh Data'}
-            </button>
-          </div>
-          
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-label">Total Revenue</div>
-              <div className="stat-value">${data?.totalRevenue?.toLocaleString() || '0'}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Total Cleanings</div>
-              <div className="stat-value">{data?.totalCleanings || 0}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Net Profit</div>
-              <div className="stat-value">${data?.netProfit?.toLocaleString() || '0'}</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">May 2026 Revenue</div>
-              <div className="stat-value">${data?.currentMonthRevenue?.toLocaleString() || '0'}</div>
-            </div>
-          </div>
-          
-          <div className="sections-grid">
-            <div className="section">
-              <h2>🌟 Top 5 Clients</h2>
-              <div className="client-list">
-                {data?.topClients?.map((client, i) => (
-                  <div key={i} className="client-item">
-                    <span className="client-name">{client.name}</span>
-                    <span className="client-revenue">${client.revenue.toLocaleString()}</span>
-                  </div>
-                )) || <p>No data</p>}
-              </div>
-            </div>
-            
-            <div className="section">
-              <h2>📅 Recent Appointments</h2>
-              <div className="appointment-list">
-                {data?.recentAppointments?.map((apt, i) => (
-                  <div key={i} className="appointment-item">
-                    <div>
-                      <div className="appointment-date">{apt.date}</div>
-                      <div style={{color: '#666', fontSize: '0.875rem'}}>{apt.client}</div>
-                    </div>
-                    <span className="client-revenue">${apt.fee}</span>
-                  </div>
-                )) || <p>No data</p>}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
     }
-    
-    ReactDOM.render(<Dashboard />, document.getElementById('root'));
+
+    loadData();
   </script>
 </body>
 </html>
