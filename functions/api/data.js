@@ -1,164 +1,149 @@
-// Cloudflare Worker - Uses Google Sheets API directly
-// Simple in-memory cache
-let cachedData = null;
-let cacheTime = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Cloudflare Worker - Sunshine Cleaning Dashboard
+// Reads from Google Sheets using the API with correct sheet structure
 
-// IMPORTANT: Replace this with your actual API key from Google Cloud Console
-const GOOGLE_SHEETS_API_KEY = 'AIzaSyCMGcVvYLdE_eozD3_EOWiQOsNqLwH0--w';
+const GOOGLE_SHEETS_API_KEY = 'AIzaSyCMGcVvYLdE_eozD3_EOWiQOsNqLwH0--w'; // ← Replace this!
 const SHEET_ID = '1xXs08NoyMEBeUCRO_1vvxZi6hkQ3kYVt95d47yguykw';
 
+// Sheet structure per month:
+// Row 1: Month name header
+// Row 2: blank
+// Row 3: "Total Cleanings", "Cleanings Fees", ..., "Expenses", ..., "Net Total"
+// Row 4: 341, "$43,900.00", ..., "$75.00", ..., "$43,975.00"  ← the summary values
+// Row 5: blank
+// Row 6: "Date", "Client", "Unit", "Fees", ... ← data header
+// Row 7+: actual cleaning records
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
+
+// Simple in-memory cache
+let cache = null;
+let cacheTime = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function onRequest(context) {
+  const corsHeaders = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  };
+
   try {
-    // Return cached data if still valid
-    if (cachedData && cacheTime && (Date.now() - cacheTime < CACHE_DURATION)) {
-      return new Response(JSON.stringify({
-        ...cachedData,
-        cached: true,
-        cacheAge: Math.floor((Date.now() - cacheTime) / 1000) + ' seconds ago'
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+    // Return cached data if fresh
+    if (cache && cacheTime && Date.now() - cacheTime < CACHE_TTL) {
+      return new Response(JSON.stringify({ ...cache, cached: true }), { headers: corsHeaders });
     }
 
-    // Fetch data from Google Sheets API
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${GOOGLE_SHEETS_API_KEY}`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const rows = data.values || [];
-    
-    if (rows.length < 2) {
-      throw new Error('No data found in sheet');
-    }
-
-    // Parse the data
-    let totalRevenue = 0;
-    let totalExpenses = 0;
-    let totalCleanings = 0;
-    const clientRevenue = {};
-    const appointments = [];
-    const monthlyRevenue = {};
-
-    // Skip header row (index 0), process data rows starting from index 1
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      
-      // Columns: Date | Client | Unit | Fees | Expenses | Reason | Net Total | Notes
-      const date = row[0] || '';
-      const client = row[1] || '';
-      const unit = row[2] || '';
-      const feesStr = row[3] || '';
-      const expensesStr = row[4] || '';
-      
-      // Parse fees and expenses (remove $ and commas)
-      const fees = parseFloat(feesStr.replace(/[$,]/g, '')) || 0;
-      const expenses = parseFloat(expensesStr.replace(/[$,]/g, '')) || 0;
-      
-      // Only count rows with actual fee data
-      if (fees > 0 && client) {
-        totalRevenue += fees;
-        totalExpenses += expenses;
-        totalCleanings++;
-        
-        // Track client revenue
-        if (!clientRevenue[client]) {
-          clientRevenue[client] = 0;
-        }
-        clientRevenue[client] += fees;
-        
-        // Track monthly revenue
-        const month = date.split('-')[1]; // Extract month (e.g., "Jan" from "1-Jan")
-        if (month) {
-          if (!monthlyRevenue[month]) {
-            monthlyRevenue[month] = 0;
-          }
-          monthlyRevenue[month] += fees;
-        }
-        
-        // Store recent appointments (last 10)
-        if (appointments.length < 10) {
-          appointments.push({
-            date: date,
-            client: client,
-            fee: fees
-          });
-        }
-      }
-    }
-    
-    // Get top 5 clients by revenue
-    const topClients = Object.entries(clientRevenue)
-      .map(([name, revenue]) => ({ name, revenue }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-    
-    // Calculate current and previous month revenue
-    const currentMonthRevenue = monthlyRevenue['May'] || 0;
-    const previousMonthRevenue = monthlyRevenue['Apr'] || 0;
-    
-    const result = {
-      totalRevenue,
-      totalCleanings,
-      totalExpenses,
-      netProfit: totalRevenue - totalExpenses,
-      topClients,
-      recentAppointments: appointments,
-      currentMonthRevenue,
-      previousMonthRevenue,
-      fetchedAt: new Date().toISOString()
-    };
-    
-    // Update cache
-    cachedData = result;
+    const result = await fetchDashboardData();
+    cache = result;
     cacheTime = Date.now();
-    
-    return new Response(JSON.stringify({
-      ...result,
-      cached: false
-    }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=300'
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    
-    // If we have cached data, return it as fallback
-    if (cachedData) {
-      return new Response(JSON.stringify({
-        ...cachedData,
-        cached: true,
-        warning: 'Using stale cache due to error: ' + error.message
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+
+    return new Response(JSON.stringify({ ...result, cached: false }), { headers: corsHeaders });
+
+  } catch (err) {
+    // Serve stale cache on error
+    if (cache) {
+      return new Response(JSON.stringify({ ...cache, cached: true, warning: err.message }), { headers: corsHeaders });
     }
-    
-    return new Response(JSON.stringify({ 
-      error: 'Failed to fetch data', 
-      details: error.message,
-      timestamp: new Date().toISOString()
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
   }
+}
+
+async function fetchDashboardData() {
+  // Batch request: rows 3-5 of each sheet (summary) + data rows
+  const ranges = [
+    ...MONTHS.map(m => `${m}!A3:H5`), // Monthly summary totals
+    ...MONTHS.map(m => `${m}!A6:D500`), // Data rows (Date, Client, Unit, Fees)
+  ];
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${
+    ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')
+  }&key=${GOOGLE_SHEETS_API_KEY}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Sheets API ${res.status}: ${txt}`);
+  }
+
+  const json = await res.json();
+  const valueRanges = json.valueRanges || [];
+
+  // Parse monthly summaries (first 5 ranges)
+  let totalRevenue = 0;
+  let totalCleanings = 0;
+  let totalExpenses = 0;
+  const monthlyRevenue = {};
+
+  MONTHS.forEach((month, i) => {
+    const rows = valueRanges[i]?.values || [];
+    // rows[0] = label row: ["Total Cleanings", "Cleanings Fees", "", "", "Expenses", "", "Net Total"]
+    // rows[1] = value row: ["341", "$43,900.00 ", "", "", "$75.00", "", "$43,975.00 "]
+    if (rows.length >= 2) {
+      const vals = rows[1];
+      const cleanings = parseInt(vals[0]) || 0;
+      const revenue = parseMoney(vals[1]);   // Column B = Cleaning Fees
+      const expenses = parseMoney(vals[4]);  // Column E = Expenses
+
+      totalCleanings += cleanings;
+      totalRevenue += revenue;
+      totalExpenses += expenses;
+      monthlyRevenue[month] = revenue;
+    }
+  });
+
+  // Parse data rows (next 5 ranges) for client breakdown
+  const clientRevenue = {};
+  const allAppointments = [];
+
+  MONTHS.forEach((month, i) => {
+    const dataIndex = MONTHS.length + i;
+    const rows = valueRanges[dataIndex]?.values || [];
+
+    rows.forEach(row => {
+      if (!row || row.length < 2) return;
+      const date = (row[0] || '').trim();
+      const client = (row[1] || '').trim();
+      const unit = (row[2] || '').trim();
+      const fees = parseMoney(row[3]);
+
+      // Skip header row and empty/zero rows
+      if (!client || fees === 0) return;
+      if (date.toLowerCase() === 'date') return;
+
+      if (!clientRevenue[client]) clientRevenue[client] = 0;
+      clientRevenue[client] += fees;
+
+      allAppointments.push({ date, client, unit, fee: fees, month });
+    });
+  });
+
+  // Top 5 clients by total revenue
+  const topClients = Object.entries(clientRevenue)
+    .map(([name, revenue]) => ({ name, revenue }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
+  // Most recent 10 appointments (from May + late Apr)
+  const recentAppointments = allAppointments
+    .filter(a => a.month === 'May' || a.month === 'Apr')
+    .slice(-20)
+    .reverse()
+    .slice(0, 10);
+
+  return {
+    totalRevenue,
+    totalCleanings,
+    totalExpenses,
+    netProfit: totalRevenue - totalExpenses,
+    topClients,
+    recentAppointments,
+    currentMonthRevenue: monthlyRevenue['May'] || 0,
+    previousMonthRevenue: monthlyRevenue['Apr'] || 0,
+    monthlyRevenue,
+    fetchedAt: new Date().toISOString()
+  };
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(/[$,\s]/g, '')) || 0;
 }
