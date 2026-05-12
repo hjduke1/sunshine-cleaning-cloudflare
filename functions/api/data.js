@@ -1,8 +1,12 @@
-// Cloudflare Worker - API endpoint for dashboard data
+// Cloudflare Worker - Uses Google Sheets API directly
 // Simple in-memory cache
 let cachedData = null;
 let cacheTime = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// IMPORTANT: Replace this with your actual API key from Google Cloud Console
+const GOOGLE_SHEETS_API_KEY = 'AIzaSyCMGcVvYLdE_eozD3_EOWiQOsNqLwH0--w';
+const SHEET_ID = '1xXs08NoyMEBeUCRO_1vvxZi6hkQ3kYVt95d47yguykw';
 
 export async function onRequest(context) {
   try {
@@ -20,83 +24,111 @@ export async function onRequest(context) {
       });
     }
 
-    // Call Claude API with Google Drive MCP to read the sheet
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        messages: [
-          {
-            role: "user",
-            content: `Read the Google Sheet with file ID "1xXs08NoyMEBeUCRO_1vvxZi6hkQ3kYVt95d47yguykw".
-
-Analyze the cleaning business data and return ONLY a JSON object (no markdown, no preamble, no backticks) with this exact structure:
-
-{
-  "totalRevenue": <sum of all Fees column>,
-  "totalCleanings": <count of all data rows>,
-  "totalExpenses": <sum of all Expenses column>,
-  "netProfit": <totalRevenue minus totalExpenses>,
-  "topClients": [
-    {"name": "Client Name", "revenue": <total fees for this client>},
-    <top 5 clients by revenue>
-  ],
-  "recentAppointments": [
-    {"date": "1-Jan", "client": "Client Name", "fee": 60},
-    <last 10 appointments>
-  ],
-  "currentMonthRevenue": <total revenue for May 2026>,
-  "previousMonthRevenue": <total revenue for April 2026>
-}`
-          }
-        ],
-        mcp_servers: [
-          {
-            "type": "url",
-            "url": "https://drivemcp.googleapis.com/mcp/v1",
-            "name": "google-drive"
-          }
-        ]
-      })
-    });
-
+    // Fetch data from Google Sheets API
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${GOOGLE_SHEETS_API_KEY}`;
+    
+    const response = await fetch(url);
+    
     if (!response.ok) {
-      throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Google Sheets API error: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const data = await response.json();
+    const rows = data.values || [];
     
-    // Extract text from Claude's response
-    const textContent = result.content
-      .filter(item => item.type === "text")
-      .map(item => item.text)
-      .join("\n");
+    if (rows.length < 2) {
+      throw new Error('No data found in sheet');
+    }
 
-    // Clean and parse JSON (remove any markdown formatting)
-    const cleanJson = textContent
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+    // Parse the data
+    let totalRevenue = 0;
+    let totalExpenses = 0;
+    let totalCleanings = 0;
+    const clientRevenue = {};
+    const appointments = [];
+    const monthlyRevenue = {};
+
+    // Skip header row (index 0), process data rows starting from index 1
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      
+      // Columns: Date | Client | Unit | Fees | Expenses | Reason | Net Total | Notes
+      const date = row[0] || '';
+      const client = row[1] || '';
+      const unit = row[2] || '';
+      const feesStr = row[3] || '';
+      const expensesStr = row[4] || '';
+      
+      // Parse fees and expenses (remove $ and commas)
+      const fees = parseFloat(feesStr.replace(/[$,]/g, '')) || 0;
+      const expenses = parseFloat(expensesStr.replace(/[$,]/g, '')) || 0;
+      
+      // Only count rows with actual fee data
+      if (fees > 0 && client) {
+        totalRevenue += fees;
+        totalExpenses += expenses;
+        totalCleanings++;
+        
+        // Track client revenue
+        if (!clientRevenue[client]) {
+          clientRevenue[client] = 0;
+        }
+        clientRevenue[client] += fees;
+        
+        // Track monthly revenue
+        const month = date.split('-')[1]; // Extract month (e.g., "Jan" from "1-Jan")
+        if (month) {
+          if (!monthlyRevenue[month]) {
+            monthlyRevenue[month] = 0;
+          }
+          monthlyRevenue[month] += fees;
+        }
+        
+        // Store recent appointments (last 10)
+        if (appointments.length < 10) {
+          appointments.push({
+            date: date,
+            client: client,
+            fee: fees
+          });
+        }
+      }
+    }
     
-    const parsedData = JSON.parse(cleanJson);
+    // Get top 5 clients by revenue
+    const topClients = Object.entries(clientRevenue)
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+    
+    // Calculate current and previous month revenue
+    const currentMonthRevenue = monthlyRevenue['May'] || 0;
+    const previousMonthRevenue = monthlyRevenue['Apr'] || 0;
+    
+    const result = {
+      totalRevenue,
+      totalCleanings,
+      totalExpenses,
+      netProfit: totalRevenue - totalExpenses,
+      topClients,
+      recentAppointments: appointments,
+      currentMonthRevenue,
+      previousMonthRevenue,
+      fetchedAt: new Date().toISOString()
+    };
     
     // Update cache
-    cachedData = parsedData;
+    cachedData = result;
     cacheTime = Date.now();
     
     return new Response(JSON.stringify({
-      ...parsedData,
-      cached: false,
-      fetchedAt: new Date().toISOString()
+      ...result,
+      cached: false
     }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=300' // 5 minute browser cache
+        'Cache-Control': 'public, max-age=300'
       }
     });
     
