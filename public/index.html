@@ -1,399 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sunshine Cleaning</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --sun: #f5a623;
-      --sun-light: #ffd980;
-      --sky: #e8f4fd;
-      --leaf: #2d6a4f;
-      --leaf-light: #52b788;
-      --dark: #1a1a2e;
-      --mid: #4a4a6a;
-      --muted: #9090b0;
-      --card: #ffffff;
-      --bg: #f4f6fb;
-      --border: #e2e5f0;
-      --shadow: 0 2px 16px rgba(26,26,46,0.08);
-      --shadow-lg: 0 8px 40px rgba(26,26,46,0.14);
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --sun:#f5a623;--sun-light:#ffd980;--leaf:#2d6a4f;--leaf-light:#52b788;
+      --dark:#1a1a2e;--mid:#4a4a6a;--muted:#9090b0;
+      --card:#ffffff;--bg:#f4f6fb;--border:#e2e5f0;
+      --shadow:0 2px 16px rgba(26,26,46,0.08);
     }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh}
+    header{background:var(--dark);padding:18px 36px;display:flex;align-items:center;justify-content:space-between}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:36px;height:36px;background:var(--sun);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px}
+    .logo h1{font-family:'DM Serif Display',serif;color:white;font-size:21px;font-weight:400}
+    .logo span{color:var(--sun-light)}
+    .hdr-right{display:flex;align-items:center;gap:14px}
+    .last-upd{color:var(--muted);font-size:12px}
+    .btn{background:var(--sun);color:var(--dark);border:none;padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
+    .btn:hover{background:var(--sun-light)}.btn:disabled{opacity:.5;cursor:not-allowed}
+    nav{background:white;border-bottom:1px solid var(--border);padding:0 36px;display:flex;gap:2px}
+    .tab{padding:13px 18px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+    .tab:hover{color:var(--dark)}.tab.active{color:var(--dark);border-bottom-color:var(--sun);font-weight:600}
+    main{max-width:1200px;margin:0 auto;padding:28px 20px}
+    .page{display:none}.page.active{display:block}
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}}
+    .stat{background:var(--card);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden}
+    .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .stat.a::before{background:linear-gradient(90deg,#2d6a4f,#52b788)}
+    .stat.b::before{background:linear-gradient(90deg,#f5a623,#ffd980)}
+    .stat.c::before{background:linear-gradient(90deg,#1a1a2e,#4a4a6a)}
+    .stat.d::before{background:linear-gradient(90deg,#0077b6,#48cae4)}
+    .slabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+    .sval{font-family:'DM Serif Display',serif;font-size:28px;color:var(--dark);line-height:1}
+    .ssub{font-size:11px;color:var(--muted);margin-top:5px}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media(max-width:700px){.two{grid-template-columns:1fr}}
+    .panel{background:var(--card);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+    .ptitle{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px}
+    .crow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+    .crow:last-child{border-bottom:none}
+    .crank{width:24px;height:24px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--mid);flex-shrink:0;margin-right:10px}
+    .crank.g{background:#fff4cc;color:#b8860b}.crank.s{background:#f0f0f0;color:#666}.crank.b{background:#fff0e8;color:#cd7f32}
+    .cname{flex:1;font-weight:500;font-size:13px}
+    .crev{font-weight:700;font-size:13px;color:var(--leaf)}
+    .arow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+    .arow:last-child{border-bottom:none}
+    .aclient{font-weight:500;font-size:13px}
+    .ameta{font-size:11px;color:var(--muted);margin-top:2px}
+    .afee{font-weight:700;font-size:13px;color:var(--leaf)}
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--dark);
-      min-height: 100vh;
-    }
+    /* List of Clients */
+    .prop-section{margin-bottom:24px}
+    .prop-header{background:var(--dark);color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+    .prop-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
+    .prop-table th{background:#f8f9fb;padding:9px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+    .prop-table td{padding:9px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+    .prop-table tr:last-child td{border-bottom:none}
+    .prop-table tr:hover td{background:#fafbff}
+    .price-badge{background:#f0faf4;color:var(--leaf);font-weight:600;padding:2px 8px;border-radius:20px;font-size:12px}
+    .status-badge{background:#e8f4ff;color:#0077b6;font-weight:500;padding:2px 8px;border-radius:20px;font-size:11px}
 
-    /* Header */
-    header {
-      background: var(--dark);
-      padding: 20px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    /* Monthly Balance Sheet */
+    .bal-wrap{overflow-x:auto;border-radius:12px;box-shadow:var(--shadow)}
+    .bal-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+    .bal-table th{background:var(--dark);color:white;padding:10px 14px;text-align:right;font-weight:600;font-size:11px;letter-spacing:.04em}
+    .bal-table th:first-child{text-align:left;position:sticky;left:0;background:var(--dark);z-index:2}
+    .bal-table td{padding:8px 14px;border-bottom:1px solid var(--border);text-align:right;background:white}
+    .bal-table td:first-child{text-align:left;font-weight:500;position:sticky;left:0;background:white;z-index:1;min-width:160px}
+    .bal-table tr:hover td{background:#f9fafb}
+    .bal-table tr:hover td:first-child{background:#f9fafb}
+    .zero{color:#ddd}
+    .bal-total{font-weight:700;color:var(--leaf)}
+    .total-row td{background:#f0f5f0!important;font-weight:700;border-top:2px solid var(--leaf)}
+    .total-row td:first-child{background:#f0f5f0!important}
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 40px; height: 40px;
-      background: var(--sun);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-    }
-
-    .logo h1 {
-      font-family: 'DM Serif Display', serif;
-      color: white;
-      font-size: 22px;
-      font-weight: 400;
-    }
-
-    .logo span {
-      color: var(--sun-light);
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .last-updated {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .btn-refresh {
-      background: var(--sun);
-      color: var(--dark);
-      border: none;
-      padding: 9px 20px;
-      border-radius: 8px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-refresh:hover { background: var(--sun-light); }
-    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Main layout */
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 36px 24px;
-    }
-
-    /* Stat cards */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 28px;
-    }
-
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .stat-card {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 22px 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-    }
-
-    .stat-card.revenue::before { background: linear-gradient(90deg, #2d6a4f, #52b788); }
-    .stat-card.cleanings::before { background: linear-gradient(90deg, #f5a623, #ffd980); }
-    .stat-card.profit::before { background: linear-gradient(90deg, #1a1a2e, #4a4a6a); }
-    .stat-card.month::before { background: linear-gradient(90deg, #0077b6, #48cae4); }
-
-    .stat-label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .stat-value {
-      font-family: 'DM Serif Display', serif;
-      font-size: 32px;
-      color: var(--dark);
-      line-height: 1;
-    }
-
-    .stat-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-    }
-
-    /* Loading skeleton */
-    .skeleton {
-      background: linear-gradient(90deg, #e8e8ee 25%, #f4f4f8 50%, #e8e8ee 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 6px;
-    }
-
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    /* Bottom grid */
-    .bottom-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 700px) {
-      .bottom-grid { grid-template-columns: 1fr; }
-    }
-
-    .panel {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-
-    .panel-title {
-      font-size: 14px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Client rows */
-    .client-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .client-row:last-child { border-bottom: none; }
-
-    .client-rank {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--mid);
-      flex-shrink: 0;
-      margin-right: 12px;
-    }
-
-    .client-rank.gold { background: #fff4cc; color: #b8860b; }
-    .client-rank.silver { background: #f0f0f0; color: #666; }
-    .client-rank.bronze { background: #fff0e8; color: #cd7f32; }
-
-    .client-name {
-      flex: 1;
-      font-weight: 500;
-      font-size: 15px;
-    }
-
-    .client-revenue {
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--leaf);
-    }
-
-    /* Appointment rows */
-    .appt-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .appt-row:last-child { border-bottom: none; }
-
-    .appt-left { flex: 1; }
-
-    .appt-client {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .appt-meta {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .appt-fee {
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--leaf);
-    }
-
-    /* Error state */
-    .error-box {
-      background: #fff5f5;
-      border: 1px solid #ffd0d0;
-      border-radius: 10px;
-      padding: 20px;
-      color: #c0392b;
-      font-size: 14px;
-      text-align: center;
-    }
+    .skeleton{background:linear-gradient(90deg,#e8e8ee 25%,#f4f4f8 50%,#e8e8ee 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
   </style>
 </head>
 <body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">☀️</div>
+    <h1>Sunshine <span>Cleaning</span></h1>
+  </div>
+  <div class="hdr-right">
+    <span class="last-upd" id="lastUpd">Loading...</span>
+    <button class="btn" id="refBtn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
 
-  <header>
-    <div class="logo">
-      <div class="logo-icon">☀️</div>
-      <h1>Sunshine <span>Cleaning</span></h1>
+<nav>
+  <button class="tab active" onclick="showPage('overview',this)">📊 Overview</button>
+  <button class="tab" onclick="showPage('clients',this)">👥 List of Clients</button>
+  <button class="tab" onclick="showPage('balance',this)">📅 Monthly Balance Sheet</button>
+</nav>
+
+<main>
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="stats">
+      <div class="stat a"><div class="slabel">Total Revenue</div><div class="sval" id="sv-rev"><div class="skeleton" style="height:30px;width:110px"></div></div><div class="ssub" id="ss-rev">&nbsp;</div></div>
+      <div class="stat b"><div class="slabel">Total Cleanings</div><div class="sval" id="sv-cln"><div class="skeleton" style="height:30px;width:70px"></div></div><div class="ssub" id="ss-cln">&nbsp;</div></div>
+      <div class="stat c"><div class="slabel">Net Profit</div><div class="sval" id="sv-pft"><div class="skeleton" style="height:30px;width:110px"></div></div><div class="ssub">&nbsp;</div></div>
+      <div class="stat d"><div class="slabel">May 2026 Revenue</div><div class="sval" id="sv-may"><div class="skeleton" style="height:30px;width:90px"></div></div><div class="ssub" id="ss-may">&nbsp;</div></div>
     </div>
-    <div class="header-right">
-      <span class="last-updated" id="lastUpdated">Loading...</span>
-      <button class="btn-refresh" id="refreshBtn" onclick="loadData()">↻ Refresh</button>
+    <div class="two">
+      <div class="panel"><div class="ptitle">🏆 Top 5 Clients</div><div id="top5"><div class="skeleton" style="height:180px"></div></div></div>
+      <div class="panel"><div class="ptitle">📅 Recent Appointments</div><div id="appts"><div class="skeleton" style="height:180px"></div></div></div>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <div class="stats-grid">
-      <div class="stat-card revenue">
-        <div class="stat-label">Total Revenue</div>
-        <div class="stat-value" id="totalRevenue"><div class="skeleton" style="height:36px;width:120px"></div></div>
-        <div class="stat-sub" id="revSub">&nbsp;</div>
-      </div>
-      <div class="stat-card cleanings">
-        <div class="stat-label">Total Cleanings</div>
-        <div class="stat-value" id="totalCleanings"><div class="skeleton" style="height:36px;width:80px"></div></div>
-        <div class="stat-sub" id="cleanSub">&nbsp;</div>
-      </div>
-      <div class="stat-card profit">
-        <div class="stat-label">Net Profit</div>
-        <div class="stat-value" id="netProfit"><div class="skeleton" style="height:36px;width:120px"></div></div>
-        <div class="stat-sub" id="profitSub">&nbsp;</div>
-      </div>
-      <div class="stat-card month">
-        <div class="stat-label">May 2026 Revenue</div>
-        <div class="stat-value" id="mayRevenue"><div class="skeleton" style="height:36px;width:100px"></div></div>
-        <div class="stat-sub" id="maySub">&nbsp;</div>
-      </div>
+  <!-- LIST OF CLIENTS -->
+  <div class="page" id="page-clients">
+    <div id="clientDir"><div class="skeleton" style="height:400px"></div></div>
+  </div>
+
+  <!-- MONTHLY BALANCE SHEET -->
+  <div class="page" id="page-balance">
+    <div class="bal-wrap">
+      <table class="bal-table" id="balTable">
+        <thead id="balHead"></thead>
+        <tbody id="balBody"><tr><td colspan="14"><div class="skeleton" style="height:400px;margin:8px;border-radius:8px"></div></td></tr></tbody>
+      </table>
     </div>
+  </div>
+</main>
 
-    <div class="bottom-grid">
-      <div class="panel">
-        <div class="panel-title">🏆 Top 5 Clients</div>
-        <div id="clientList"><div class="skeleton" style="height:200px"></div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-title">📅 Recent Appointments</div>
-        <div id="apptList"><div class="skeleton" style="height:200px"></div></div>
-      </div>
-    </div>
-  </main>
+<script>
+const fmt = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+let D = null;
 
-  <script>
-    const fmt = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
 
-    async function loadData() {
-      const btn = document.getElementById('refreshBtn');
-      btn.disabled = true;
-      btn.textContent = '↻ Loading...';
+async function loadData() {
+  const btn = document.getElementById('refBtn');
+  btn.disabled=true; btn.textContent='↻ Loading...';
+  try {
+    const res = await fetch('/api/data?t='+Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    D = await res.json();
+    if(D.error) throw new Error(D.error);
+    renderAll();
+    document.getElementById('lastUpd').textContent = 'Updated '+new Date(D.fetchedAt).toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('lastUpd').textContent = 'Error: '+e.message;
+  } finally { btn.disabled=false; btn.textContent='↻ Refresh'; }
+}
 
-      try {
-        const res = await fetch('/api/data?t=' + Date.now());
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const d = await res.json();
+function renderAll() {
+  // Stats
+  document.getElementById('sv-rev').textContent = fmt(D.totalRevenue);
+  document.getElementById('sv-cln').textContent = Number(D.totalCleanings).toLocaleString();
+  document.getElementById('sv-pft').textContent = fmt(D.netProfit);
+  document.getElementById('sv-may').textContent = fmt(D.currentMonthRevenue);
+  document.getElementById('ss-rev').textContent = 'Jan – May 2026';
+  document.getElementById('ss-cln').textContent = 'All months';
+  document.getElementById('ss-may').textContent = 'Apr: '+fmt(D.previousMonthRevenue);
 
-        if (d.error) throw new Error(d.error);
+  // Top 5
+  const ranks = ['g','s','b','',''];
+  document.getElementById('top5').innerHTML = (D.topClients||[]).map((c,i)=>`
+    <div class="crow">
+      <div class="crank ${ranks[i]}">${i+1}</div>
+      <div class="cname">${c.name}</div>
+      <div class="crev">${fmt(c.revenue)}</div>
+    </div>`).join('');
 
-        // Stat cards
-        document.getElementById('totalRevenue').textContent = fmt(d.totalRevenue);
-        document.getElementById('totalCleanings').textContent = Number(d.totalCleanings).toLocaleString();
-        document.getElementById('netProfit').textContent = fmt(d.netProfit);
-        document.getElementById('mayRevenue').textContent = fmt(d.currentMonthRevenue);
+  // Appointments
+  document.getElementById('appts').innerHTML = (D.recentAppointments||[]).map(a=>`
+    <div class="arow">
+      <div><div class="aclient">${a.client}</div><div class="ameta">${a.date}${a.unit?' · '+a.unit:''}</div></div>
+      <div class="afee">${fmt(a.fee)}</div>
+    </div>`).join('');
 
-        document.getElementById('revSub').textContent = 'Jan – May 2026';
-        document.getElementById('cleanSub').textContent = 'All months';
-        document.getElementById('profitSub').textContent = 'After expenses';
-        document.getElementById('maySub').textContent = 'Apr: ' + fmt(d.previousMonthRevenue);
+  renderClientDir();
+  renderBalance();
+}
 
-        // Top clients
-        const rankClass = ['gold', 'silver', 'bronze', '', ''];
-        const clientHTML = (d.topClients || []).map((c, i) => `
-          <div class="client-row">
-            <div class="client-rank ${rankClass[i]}">${i + 1}</div>
-            <div class="client-name">${c.name}</div>
-            <div class="client-revenue">${fmt(c.revenue)}</div>
-          </div>
-        `).join('');
-        document.getElementById('clientList').innerHTML = clientHTML || '<p style="color:#aaa;font-size:14px">No data</p>';
+function renderClientDir() {
+  const rows = D.clientDirectory || [];
+  // Group by property
+  const groups = {};
+  rows.forEach(r => {
+    const prop = r.property || 'Other';
+    if(!groups[prop]) groups[prop] = [];
+    groups[prop].push(r);
+  });
 
-        // Recent appointments
-        const apptHTML = (d.recentAppointments || []).map(a => `
-          <div class="appt-row">
-            <div class="appt-left">
-              <div class="appt-client">${a.client}</div>
-              <div class="appt-meta">${a.date}${a.unit ? ' · Unit ' + a.unit : ''}</div>
-            </div>
-            <div class="appt-fee">${fmt(a.fee)}</div>
-          </div>
-        `).join('');
-        document.getElementById('apptList').innerHTML = apptHTML || '<p style="color:#aaa;font-size:14px">No data</p>';
+  const html = Object.entries(groups).map(([prop, items]) => {
+    const trows = items.map(r => `
+      <tr>
+        <td>${r.client || '—'}</td>
+        <td>${r.unit || '—'}</td>
+        <td>${r.price ? `<span class="price-badge">${r.price}</span>` : '—'}</td>
+        <td>${r.status ? `<span class="status-badge">${r.status}</span>` : ''}</td>
+      </tr>`).join('');
+    return `
+      <div class="prop-section">
+        <div class="prop-header">${prop}</div>
+        <table class="prop-table">
+          <thead><tr><th>Client</th><th>Unit</th><th>Price</th><th>Status</th></tr></thead>
+          <tbody>${trows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
 
-        // Timestamp
-        const ts = new Date(d.fetchedAt);
-        document.getElementById('lastUpdated').textContent = 'Updated ' + ts.toLocaleTimeString();
+  document.getElementById('clientDir').innerHTML = html || '<p style="color:var(--muted);padding:20px">No client data found.</p>';
+}
 
-      } catch (err) {
-        document.querySelector('main').innerHTML = `
-          <div class="error-box">
-            <strong>Could not load data</strong><br>${err.message}
-          </div>`;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '↻ Refresh';
-      }
-    }
+function renderBalance() {
+  const data = D.balanceData || [];
+  const headers = D.balanceHeader || [];
 
-    loadData();
-  </script>
+  // Build header
+  document.getElementById('balHead').innerHTML = `<tr>
+    <th>Client</th>
+    ${headers.map(h=>`<th>${h}</th>`).join('')}
+  </tr>`;
+
+  // Compute column totals
+  const totals = {};
+  headers.forEach(h => totals[h] = 0);
+  let grandTotal = 0;
+
+  const rows = data.map(client => {
+    let rowTotal = 0;
+    const cells = headers.map(h => {
+      const v = client[h] || 0;
+      totals[h] += v;
+      rowTotal += v;
+      return `<td class="${v===0?'zero':'bal-total'}">${v>0?fmt(v):'—'}</td>`;
+    }).join('');
+    grandTotal += rowTotal;
+    return `<tr><td>${client.name}</td>${cells}<td class="bal-total">${rowTotal>0?fmt(rowTotal):'—'}</td></tr>`;
+  }).join('');
+
+  // Total row
+  const totalCells = headers.map(h=>`<td>${totals[h]>0?fmt(totals[h]):'—'}</td>`).join('');
+  const totalRow = `<tr class="total-row"><td>TOTAL</td>${totalCells}<td>${fmt(grandTotal)}</td></tr>`;
+
+  document.getElementById('balBody').innerHTML = rows + totalRow;
+
+  // Re-add Annual Total header if present
+  if(!headers.includes('Annual Total')) {
+    document.getElementById('balHead').querySelector('tr').innerHTML +=
+      '<th style="background:#2d6a4f">Total</th>';
+  }
+}
+
+loadData();
+</script>
 </body>
 </html>
