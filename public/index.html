@@ -222,7 +222,7 @@ function renderClientDir() {
 
 function renderBalance() {
   const data = D.balanceData || [];
-  const months = D.months || ['Jan','Feb','Mar','Apr','May'];
+  const months = D.balanceMonths && D.balanceMonths.length ? D.balanceMonths : ['Jan','Feb','Mar','Apr','May'];
 
   // Build header
   document.getElementById('balHead').innerHTML = `<tr>
