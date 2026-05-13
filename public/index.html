@@ -222,33 +222,33 @@ function renderClientDir() {
 
 function renderBalance() {
   const data = D.balanceData || [];
-  const headers = D.balanceHeader || [];
+  const months = D.months || ['Jan','Feb','Mar','Apr','May'];
 
   // Build header
   document.getElementById('balHead').innerHTML = `<tr>
     <th>Client</th>
-    ${headers.map(h=>`<th>${h}</th>`).join('')}
+    ${months.map(m=>`<th>${m}</th>`).join('')}
+    <th style="background:#2d6a4f">Total</th>
   </tr>`;
 
   // Compute column totals
   const totals = {};
-  headers.forEach(h => totals[h] = 0);
+  months.forEach(m => totals[m] = 0);
   let grandTotal = 0;
 
   const rows = data.map(client => {
-    let rowTotal = 0;
-    const cells = headers.map(h => {
-      const v = client[h] || 0;
-      totals[h] += v;
-      rowTotal += v;
+    const cells = months.map(m => {
+      const v = (client.monthly || {})[m] || 0;
+      totals[m] += v;
       return `<td class="${v===0?'zero':'bal-total'}">${v>0?fmt(v):'—'}</td>`;
     }).join('');
+    const rowTotal = client.total || 0;
     grandTotal += rowTotal;
     return `<tr><td>${client.name}</td>${cells}<td class="bal-total">${rowTotal>0?fmt(rowTotal):'—'}</td></tr>`;
   }).join('');
 
   // Total row
-  const totalCells = headers.map(h=>`<td>${totals[h]>0?fmt(totals[h]):'—'}</td>`).join('');
+  const totalCells = months.map(m=>`<td>${totals[m]>0?fmt(totals[m]):'—'}</td>`).join('');
   const totalRow = `<tr class="total-row"><td>TOTAL</td>${totalCells}<td>${fmt(grandTotal)}</td></tr>`;
 
   document.getElementById('balBody').innerHTML = rows + totalRow;

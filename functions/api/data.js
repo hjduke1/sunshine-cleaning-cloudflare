@@ -21,11 +21,12 @@ export async function onRequest(context) {
 }
 
 async function fetchAll() {
+  // Fetch cleaning data for each month + try both possible tab name variants
   const ranges = [
-    ...MONTHS.map(m => `${m}!A:E`),          // 0-4: monthly cleaning data
-    `List of Clients!A:F`,                     // 5: client list tab
-    `Monthly Balance Sheet!A:N`,               // 6: balance sheet tab
+    ...MONTHS.map(m => `${m}!A:E`),
+    `List of Clients!A:F`,
   ];
+
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${
     ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')
   }&key=${GOOGLE_SHEETS_API_KEY}`;
@@ -35,9 +36,11 @@ async function fetchAll() {
   const json = await res.json();
   const vr = json.valueRanges || [];
 
-  // --- Monthly cleaning data (ranges 0-4) ---
+  // --- Build everything from monthly cleaning data (ranges 0-4) ---
   let totalRevenue = 0, totalExpenses = 0, totalCleanings = 0;
-  const clientRevenue = {}, monthlyRevenue = {};
+  const clientRevenue = {};
+  const clientMonthly = {}; // { clientName: { Jan: X, Feb: Y, ... } }
+  const monthlyRevenue = {};
   const allAppointments = [];
 
   MONTHS.forEach((month, i) => {
@@ -50,8 +53,15 @@ async function fetchAll() {
       if (!date || !client || fees === 0) return;
       if (date.toLowerCase() === 'date') return;
       if (isNaN(date[0]) && !date.includes('-')) return;
+
       totalRevenue += fees; totalExpenses += expenses; totalCleanings++; mRev += fees;
       clientRevenue[client] = (clientRevenue[client] || 0) + fees;
+
+      if (!clientMonthly[client]) {
+        clientMonthly[client] = {};
+        MONTHS.forEach(m => clientMonthly[client][m] = 0);
+      }
+      clientMonthly[client][month] += fees;
       allAppointments.push({ date, client, unit, fee: fees, month });
     });
     monthlyRevenue[month] = mRev;
@@ -65,58 +75,45 @@ async function fetchAll() {
     .filter(a => a.month === 'May' || a.month === 'Apr')
     .slice(-20).reverse().slice(0, 10);
 
+  // Monthly Balance Sheet — built from actual cleaning data
+  const balanceData = Object.entries(clientRevenue)
+    .map(([name, total]) => ({ name, total, monthly: clientMonthly[name] || {} }))
+    .sort((a, b) => b.total - a.total);
+
   // --- List of Clients tab (range 5) ---
   const clientListRows = vr[5]?.values || [];
-  // Structure: Property header rows, then client rows with: blank, Client, Unit, Price, Notes, Status
-  // We'll group by property
   const clientDirectory = [];
   let currentProperty = '';
+
   clientListRows.forEach(row => {
     if (!row || row.length === 0) return;
-    const col0 = (row[0] || '').trim();
-    const col1 = (row[1] || '').trim();
-    const col2 = (row[2] || '').trim();
-    const col3 = (row[3] || '').trim();
-    const col5 = (row[5] || '').trim();
+    const c0 = (row[0] || '').trim();
+    const c1 = (row[1] || '').trim();
+    const c2 = (row[2] || '').trim();
+    const c3 = (row[3] || '').trim();
+    const c4 = (row[4] || '').trim();
+    const c5 = (row[5] || '').trim();
 
-    // Property header: col0 has text, col1 is empty
-    if (col0 && !col1 && col0 !== 'Property') {
-      currentProperty = col0;
+    // Skip obvious header rows
+    if (c0.toLowerCase() === 'property' || c1.toLowerCase() === 'client') return;
+
+    // Property header: a non-empty col0, with col1 empty (or it's a building name)
+    if (c0 && !c1 && !c2) {
+      currentProperty = c0;
       return;
     }
-    // Skip header row
-    if (col0 === 'Property') return;
 
-    // Client row: col1 has client name or col2 has unit
-    if ((col1 || col2) && col0 !== 'Property') {
+    // Client row: has a client name or unit
+    if (c1 || c2) {
       clientDirectory.push({
         property: currentProperty,
-        client: col1,
-        unit: col2,
-        price: col3,
-        status: col5 || 'Active'
+        client: c1,
+        unit: c2,
+        price: c3 || c4,
+        status: c5 || 'Active'
       });
     }
   });
-
-  // --- Monthly Balance Sheet tab (range 6) ---
-  const balanceRows = vr[6]?.values || [];
-  // Row 0: header — "Clients", "Jan", "Feb", ... "Dec", "Annual Total"
-  // Then data rows per client
-  const balanceHeader = balanceRows[0] || [];
-  const balanceData = [];
-  for (let i = 1; i < balanceRows.length; i++) {
-    const row = balanceRows[i];
-    if (!row || !row[0] || row[0].trim() === '') continue;
-    const name = row[0].trim();
-    if (name === 'TOTAL BALANCE') continue; // skip total row — we'll recalc
-    const entry = { name };
-    balanceHeader.forEach((col, ci) => {
-      if (ci === 0) return;
-      entry[col.trim()] = parseMoney(row[ci]);
-    });
-    balanceData.push(entry);
-  }
 
   return {
     totalRevenue, totalCleanings, totalExpenses,
@@ -125,9 +122,9 @@ async function fetchAll() {
     currentMonthRevenue: monthlyRevenue['May'] || 0,
     previousMonthRevenue: monthlyRevenue['Apr'] || 0,
     monthlyRevenue,
-    clientDirectory,   // from "List of Clients" tab
-    balanceData,       // from "Monthly Balance Sheet" tab
-    balanceHeader: balanceHeader.slice(1), // month column names
+    balanceData,     // calculated from cleaning data
+    clientDirectory, // from List of Clients tab
+    months: MONTHS,
     fetchedAt: new Date().toISOString()
   };
 }
