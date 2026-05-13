@@ -1,5 +1,5 @@
 // Cloudflare Worker - Sunshine Cleaning Dashboard
-const GOOGLE_SHEETS_API_KEY = 'AIzaSyCNFL9xcZ8kcAHzXT7iPAYRaDncodg4DSo'; // ← Replace this!
+const GOOGLE_SHEETS_API_KEY = 'YOUR_API_KEY_HERE'; // ← Replace this!
 const SHEET_ID = '1xXs08NoyMEBeUCRO_1vvxZi6hkQ3kYVt95d47yguykw';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 
@@ -73,7 +73,10 @@ async function fetchAll() {
   // Row 2+ (sheet rows 6+): data rows
   const balRaw = vr[6]?.values || [];
   const balHeader = balRaw[0] || []; // ["Clients","Jan","Feb","Mar","Apr","May",...]
-  const monthCols = balHeader.slice(1).filter(h => h && h.trim()); // ["Jan","Feb",...]
+  const allCols = balHeader.slice(1).filter(h => h && h.trim());
+  // Exclude "Annual Total" column from month columns to avoid double-counting
+  const annualTotalIdx = allCols.findIndex(c => c.toLowerCase().includes('annual'));
+  const realMonthCols = allCols.filter(c => !c.toLowerCase().includes('annual') && !c.toLowerCase().includes('total'));
 
   const balanceData = [];
   for (let i = 1; i < balRaw.length; i++) {
@@ -83,13 +86,16 @@ async function fetchAll() {
     if (name.toUpperCase().includes('TOTAL') || name.toUpperCase().includes('BALANCE')) continue;
 
     const monthly = {};
-    let rowTotal = 0;
-    monthCols.forEach((col, ci) => {
-      const v = parseMoney(row[ci + 1]);
-      monthly[col] = v;
-      rowTotal += v;
+    realMonthCols.forEach((col, ci) => {
+      monthly[col] = parseMoney(row[ci + 1]);
     });
-    balanceData.push({ name, monthly, total: rowTotal });
+
+    // Use Annual Total directly from sheet — avoids double-counting
+    const total = annualTotalIdx >= 0
+      ? parseMoney(row[annualTotalIdx + 1])
+      : Object.values(monthly).reduce((s, v) => s + v, 0);
+
+    balanceData.push({ name, monthly, total });
   }
 
   // ── List of Clients (range 5) ──
@@ -119,7 +125,7 @@ async function fetchAll() {
     previousMonthRevenue: monthlyRevenue['Apr'] || 0,
     monthlyRevenue,
     balanceData,
-    balanceMonths: monthCols,  // actual column names from the sheet header
+    balanceMonths: realMonthCols,  // actual column names from the sheet header
     clientDirectory,
     fetchedAt: new Date().toISOString()
   };
